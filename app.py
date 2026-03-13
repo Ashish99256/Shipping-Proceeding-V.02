@@ -38,6 +38,11 @@ class ShippingEntry(db.Model):
     out_date_time = db.Column(db.String(50))
     status = db.Column(db.String(20), default="Open")
 
+# 🔹 table auto create
+with app.app_context():
+    db.create_all()
+
+
 class Checklist7Point(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sr_no = db.Column(db.String(20), unique=True)
@@ -439,6 +444,4 @@ def delete_photo(photo_id):
 # ══════════════════════════════════════════════════════
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
