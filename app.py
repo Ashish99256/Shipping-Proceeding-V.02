@@ -438,6 +438,10 @@ def delete_photo(photo_id):
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/testdata')
+def testdata():
+    data = ShippingEntry.query.all()
+    return str([d.sr_no for d in data])
 
 # ══════════════════════════════════════════════════════
 #  STARTUP
@@ -445,3 +449,4 @@ def delete_photo(photo_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
