@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 3: Pallet Verification · compact & screenshot match</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* base & existing layout — untouched (except right container grid) */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; overflow-x: hidden; }
+        
+        /* Top Action Bar */
+        .top-action-bar { background: #fff; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1001; }
+        
+        /* Side Stepper */
+        .side-stepper { width: 60px; height: 100vh; background: #2c3e50; position: fixed; left: 0; top: 0; transition: 0.3s; z-index: 1000; padding-top: 60px; overflow: hidden; }
+        .side-stepper:hover { width: 220px; }
+        .step-item { color: white; padding: 15px 20px; display: flex; align-items: center; text-decoration: none; white-space: nowrap; }
+        .step-num { min-width: 25px; height: 25px; background: #7f8c8d; border-radius: 50%; text-align: center; margin-right: 15px; font-size: 12px; line-height: 25px; }
+        .step-item.active .step-num { background: #00FFFF; color: #000; }
+        .step-item.completed .step-num { background: #2ecc71; }
+
+        /* Main Wrapper for index1.html Style */
+        .main-wrapper { margin-left: 60px; height: calc(100vh - 50px); display: flex; }
+
+        /* Left Static Panel — with added summary row to match screenshot (Total Items, Verified) */
+        .left-static-panel { width: 350px; background: #fff; border-right: 2px solid #000; padding: 15px; flex-shrink: 0; overflow-y: auto; }
+        .logo-box { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .logo-box img { width: 80px; }
+        .logo-box h6 { font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }
+        
+        .checklist-content { font-size: 13px; line-height: 2; font-weight: bold; }
+        .scan-box { background: #003366; color: #fff; padding: 15px; border-radius: 5px; margin-top: 25px; text-align: center; }
+        .scan-box input { width: 100%; border: none; border-radius: 3px; padding: 8px; margin-top: 10px; font-weight: bold; text-align: center; }
+
+        /* ----- compact summary line (Total/Verified) as in screenshot ----- */
+        .summary-stats {
+            display: flex;
+            justify-content: space-between;
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 15px 0 5px 0;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #ccc;
+        }
+        .summary-stats span:first-child { color: #003366; }
+        .summary-stats span:last-child { color: #28a745; }
+        .summary-stats .pending-stat { color: #dc3545; }
+
+        /* ---------- RIGHT DYNAMIC CONTAINER — grid for compact tables ---------- */
+        .pallet-grid-wrapper {
+            flex-grow: 1;
+            padding: 15px 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr)); /* slightly narrower columns */
+            gap: 12px 15px;
+            align-items: start;
+            overflow-y: auto;
+            background: #f0f2f5;
+        }
+
+        .right-dynamic-container {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column; /* Content line ma niche avshe */
+            align-items: center;    /* Horizontal Center mate */
+            overflow-y: auto;
+            background: #f0f2f5;
+        }
+
+
+        
+        /* ---------- COMPACT TABLE CARD — matches screenshot layout, smaller footprint ---------- */
+        .pallet-table-card {
+            background: white;
+            border: 1px solid #222;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 360px;    /* keep compact, but fluid */
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        /* inner table: compact, exactly as screenshot */
+        .pallet-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            table-layout: fixed;
+        }
+        .pallet-table th, .pallet-table td {
+            border: 1px solid #111;
+            padding: 3px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        /* Col widths matching screenshot exactly */
+        .pallet-table col.col-num  { width: 22px; }
+        .pallet-table col.col-desc { width: auto; }
+        .pallet-table col.col-chk  { width: 26px; }
+
+        /* title row (company) – hidden? actually screenshot shows title above, but table header shows "Enter 10-digit Pallet ID".
+           We'll keep the company row outside? but screenshot inside table? 
+           In the screenshot, table header is "Enter 10-digit Pallet ID" and above it there is SKAPS heading.
+           The left panel already shows main title. To match screenshot exactly, we put the 10-digit input as first row (colspan=3) */
+        .pallet-id-header-compact input {
+            width: 100%;
+            border: 1px solid #555;
+            padding: 4px 2px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            background: #fff3cd;   /* light yellow hint */
+            border-radius: 2px;
+            box-sizing: border-box;
+        }
+        .pallet-id-header-compact input:read-only {
+            background: #f8f9fa;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* for the checkbox cells: exactly as screenshot: square, red accent */
+        .checkbox-compact {
+            width: 16px;
+            height: 16px;
+            accent-color: red;
+            margin: 0 auto;
+            display: block;
+        }
+
+        /* header row for "Enter 10-digit Pallet ID" */
+        .pallet-id-row th {
+            padding: 5px 4px;
+            background-color: #f0f0f0;
+            font-weight: normal;
+        }
+        .pallet-id-row th input {
+            font-size: 11px;
+            padding: 3px;
+            width: 100%;
+            border: 1px solid #888;
+            text-align: center;
+            background: #fff3cd;
+            font-weight: bold;
+        }
+
+        /* first column (number) — very narrow like screenshot */
+        .pallet-table td:first-child {
+            width: 22px !important;
+            min-width: 22px;
+            max-width: 22px;
+            font-weight: 600;
+            font-size: 11px;
+            text-align: center;
+            padding: 3px 2px !important;
+        }
+        /* checkbox column — small square like screenshot */
+        .pallet-table td:last-child {
+            width: 26px !important;
+            min-width: 26px;
+            max-width: 26px;
+            text-align: center;
+            padding: 2px !important;
+        }
+        /* description column — all remaining width, text left-aligned, wraps */
+        .pallet-table td:nth-child(2) {
+            text-align: center;
+            padding: 3px 6px;
+            white-space: normal !important;
+            word-break: break-word;
+            font-size: 11px;
+            line-height: 1.4;
+            overflow: visible !important;
+            text-overflow: unset !important;
+        }
+
+        /* duplicate indicator (small) */
+        .duplicate-warning { color: #dc3545; font-size: 9px; }
+
+        /* focus helper */
+        #palletScanner:focus { outline: 2px solid #ffbf00; }
+
+        /* ---- X (remove) button on table card ---- */
+        .btn-remove-card {
+            position: absolute;
+            top: 3px; right: 3px;
+            width: 22px; height: 22px;
+            background: #dc3545;
+            color: #fff;
+            border: none; border-radius: 3px;
+            font-size: 13px; font-weight: bold;
+            cursor: pointer; line-height: 22px;
+            padding: 0; text-align: center; z-index: 10;
+        }
+        .btn-remove-card:hover { background: #a71d2a; }
+        .pallet-table-card { position: relative; }
+
+        /* ---- QR Scanner Modal ---- */
+        #qrModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.78); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        #qrModal.active { display: flex; }
+        #qrModalBox {
+            background: #fff; border-radius: 10px;
+            padding: 18px; width: 320px; max-width: 95vw;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+        }
+        #qrModalBox h6 { font-weight:bold; font-size:14px; margin-bottom:10px; color:#003366; }
+        #qr-video {
+            width: 100%; border-radius: 6px;
+            border: 2px solid #003366; background:#000;
+            aspect-ratio: 1/1; object-fit: cover; display:block;
+        }
+        #qr-result-text { margin-top:8px; font-size:12px; color:#28a745; font-weight:bold; min-height:18px; }
+        #qr-close-btn {
+            margin-top:10px; width:100%; padding:7px;
+            background:#dc3545; color:#fff; border:none;
+            border-radius:5px; font-weight:bold; cursor:pointer;
+        }
+        #qr-close-btn:hover { background:#a71d2a; }
+        .qr-video-wrap { position:relative; display:block; width:100%; }
+        #qr-scan-line {
+            position:absolute; left:0; right:0; height:2px;
+            background:#00FFFF; top:0;
+            animation: scanMove 2s linear infinite;
+            pointer-events:none; z-index:5;
+        }
+        @keyframes scanMove {
+            0%   { top: 0%; }
+            50%  { top: calc(100% - 2px); }
+            100% { top: 0%; }
+        }
+
+        /* responsive: single column when too narrow */
+        @media (max-width: 700px) {
+            .pallet-grid-wrapper { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- top bar unchanged -->
+    <div class="top-action-bar">
+        <div>
+            <span class="fw-bold">Application No: </span>
+            <a href="/" class="text-primary fw-bold" style="text-decoration:none;">{{ data.sr_no }}</a>
+        </div>
+        <div>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/packing_list/{{ data.sr_no }}'">Back</button>
+            <button class="btn btn-primary btn-sm ms-2" onclick="saveData()">Save & Next Step ➔</button>
+        </div>
+    </div>
+
+    <!-- side stepper unchanged -->
+    <div class="side-stepper">
+        <a href="/checklist/{{ data.sr_no }}" class="step-item completed"><div class="step-num">1</div> <span>7 Point Checklist</span></a>
+        <a href="/packing_list/{{ data.sr_no }}" class="step-item completed"><div class="step-num">2</div> <span>Packing List</span></a>
+        <div class="step-item active"><div class="step-num">3</div> <span>Pallet Verification</span></div>
+        <div class="step-item"><div class="step-num">4</div> <span>Photos</span></div>
+        <div class="step-item"><div class="step-num">5</div> <span>Document Checklist</span></div>
+    </div>
+
+    <!-- main wrapper (left static + right dynamic) -->
+    <div class="main-wrapper">
+        <!-- left panel with added stats to match screenshot -->
+        <div class="left-static-panel">
+            <!-- Summary: Total Items / Verified (exactly as screenshot) -->
+            <div class="summary-stats" id="summaryStats">
+                <span>Total Items: <span id="totalItemsCount">{{ total_items }}</span></span>
+                <span class="pending-stat">Pending: <span id="pendingCount">{{ total_items }}</span></span>
+                <span>Verified: <span id="verifiedCount">0</span></span>
+            </div>
+
+            <!-- scan box (exactly as screenshot) -->
+            <div class="scan-box">
+                <label class="fw-bold small">SCAN PALLET ID / ELEMENT ID</label>
+                <input type="text" id="palletScanner" placeholder="Scan here..." autofocus>
+                <button 
+                    id="enterBtn"
+                    onclick="triggerScanEntry()"
+                    style="width:100%; margin-top:10px; padding:8px; background:#00FFFF; color:#000; border:none; border-radius:4px; font-weight:bold; font-size:13px; cursor:pointer; letter-spacing:1px;">
+                    ⏎ &nbsp;Enter
+                </button>
+                <button 
+                    id="qrScanBtn"
+                    onclick="openQrScanner()"
+                    style="width:100%; margin-top:8px; padding:8px; background:#28a745; color:#fff; border:none; border-radius:4px; font-weight:bold; font-size:13px; cursor:pointer; letter-spacing:0.5px;">
+                    📷 &nbsp;Scan QR Code
+                </button>
+                <div class="small text-warning mt-1" style="font-size:10px;">Scan or type ID, then press Enter / click button</div>
+            </div>
+
+            <!-- Element Info Box — shown after successful validation -->
+            <div id="elementInfoBox" style="display:none; margin-top:12px; background:#d4edda; border:1.5px solid #28a745; border-radius:6px; padding:10px; font-size:11.5px; color:#155724;">
+                <div style="font-weight:bold; font-size:12px; margin-bottom:6px; color:#0a5c2e;">✅ Element Found in Packing List</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td style="padding:2px 4px; font-weight:600; width:50%;">Element ID</td><td id="info_element_id" style="padding:2px 4px;"></td></tr>
+                    <tr style="background:rgba(0,0,0,0.04);"><td style="padding:2px 4px; font-weight:600;">Product Name</td><td id="info_product_name" style="padding:2px 4px;"></td></tr>
+                    <tr><td style="padding:2px 4px; font-weight:600;">Qty M²</td><td id="info_qty_m2" style="padding:2px 4px;"></td></tr>
+                    <tr style="background:rgba(0,0,0,0.04);"><td style="padding:2px 4px; font-weight:600;">Qty Sheets</td><td id="info_qty_sheets" style="padding:2px 4px;"></td></tr>
+                    <tr><td style="padding:2px 4px; font-weight:600;">Net Weight</td><td id="info_net_weight" style="padding:2px 4px;"></td></tr>
+                    <tr style="background:rgba(0,0,0,0.04);"><td style="padding:2px 4px; font-weight:600;">Gross Weight</td><td id="info_gross_weight" style="padding:2px 4px;"></td></tr>
+                    <tr><td style="padding:2px 4px; font-weight:600;">Customer PO</td><td id="info_customer_po" style="padding:2px 4px;"></td></tr>
+                    <tr style="background:rgba(0,0,0,0.04);"><td style="padding:2px 4px; font-weight:600;">Invoice No</td><td id="info_invoice_no" style="padding:2px 4px;"></td></tr>
+                </table>
+            </div>
+
+            <!-- Error Box — shown when Element ID not found -->
+            <div id="elementErrorBox" style="display:none; margin-top:12px; background:#f8d7da; border:1.5px solid #dc3545; border-radius:6px; padding:10px; font-size:12px; color:#721c24; font-weight:600;">
+            </div>
+
+            <div class="mt-2 text-muted small" style="font-size:11px;">Tip: Only Element IDs from Packing List are accepted</div>
+        </div>
+
+        <!-- RIGHT DYNAMIC CONTAINER — tables injected here -->
+         <div class="right-dynamic-container">
+    <!-- Header Section for Logo & Name -->
+    <div class="right-header-section w-100 text-center mb-4">
+        <div class="logo-box border-0">
+            <img src="{{ url_for('static', filename='image/skaps logo.jpeg') }}" alt="SKAPS LOGO" style="width: 100px;">
+            <h5 class="mt-2 fw-bold">SKAPS ADVANCED COMPOSITES PVT LTD</h5>
+            <p class="text-muted small">PALLET PACKING CHECK LIST FORM - PET</p>
+            <div class="pallet-grid-wrapper" id="tablesWrapper"></div>
+        </div>
+    </div>
+
+ 
+
+        <!-- <div class="right-dynamic-container" id="tablesWrapper"></div> -->
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="qrModal">
+        <div id="qrModalBox">
+            <h6>📷 QR Code Scanner</h6>
+            <div class="qr-video-wrap">
+                <video id="qr-video" playsinline autoplay muted></video>
+                <div id="qr-scan-line"></div>
+            </div>
+            <div id="qr-result-text">Aiming camera on QR code...</div>
+            <button id="qr-close-btn" onclick="closeQrScanner()">✕ &nbsp;Close Scanner</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        /* ============================================================
+           CONSTANTS — Flask injects sr_no via Jinja
+        ============================================================ */
+        const SR_NO = "{{ data.sr_no }}";
+
+        /* ============================================================
+           MAIN PALLET VERIFICATION LOGIC
+        ============================================================ */
+        (function() {
+            const scannerInput  = document.getElementById('palletScanner');
+            const wrapper       = document.getElementById('tablesWrapper');
+            const verifiedSpan  = document.getElementById('verifiedCount');
+            const infoBox       = document.getElementById('elementInfoBox');
+            const errorBox      = document.getElementById('elementErrorBox');
+
+            let existingPalletIds = new Set();
+
+            // ── Count display ────────────────────────────────────────
+            function updateVerifiedCount() {
+                const verified = wrapper.querySelectorAll('.pallet-table-card').length;
+                const total    = parseInt(document.getElementById('totalItemsCount').textContent) || 0;
+                verifiedSpan.textContent = verified;
+                document.getElementById('pendingCount').textContent = Math.max(0, total - verified);
+            }
+
+            // ── Show green info box with packing list data ───────────
+            function showInfoBox(item) {
+                errorBox.style.display = 'none';
+                document.getElementById('info_element_id').textContent   = item.element_id;
+                document.getElementById('info_product_name').textContent = item.product_name;
+                document.getElementById('info_qty_m2').textContent       = item.qty_m2;
+                document.getElementById('info_qty_sheets').textContent   = item.qty_sheets;
+                document.getElementById('info_net_weight').textContent   = item.net_weight + ' kg';
+                document.getElementById('info_gross_weight').textContent = item.gross_weight + ' kg';
+                document.getElementById('info_customer_po').textContent  = item.customer_po;
+                document.getElementById('info_invoice_no').textContent   = item.invoice_no;
+                infoBox.style.display = 'block';
+            }
+
+            function hideInfoBox() {
+                infoBox.style.display  = 'none';
+                errorBox.style.display = 'none';
+            }
+
+            function showErrorBox(msg) {
+                infoBox.style.display   = 'none';
+                errorBox.textContent    = '❌ ' + msg;
+                errorBox.style.display  = 'block';
+            }
+
+            // ── Create compact table card ────────────────────────────
+            function createCompactPalletTable(palletId, checklistState) {
+                const card = document.createElement('div');
+                card.className = 'pallet-table-card';
+                card.dataset.palletId = palletId;
+
+                // X remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn-remove-card';
+                removeBtn.title = 'Remove this table';
+                removeBtn.textContent = '✕';
+                removeBtn.onclick = function() {
+                    if (confirm(`Remove Pallet ID "${palletId}"?`)) {
+                        // 1. Delete from DB
+                        fetch(`/delete_pallet_verification/${SR_NO}/${encodeURIComponent(palletId)}`, {
+                            method: 'DELETE'
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.status !== 'success') {
+                                console.warn('DB delete failed:', res.message);
+                            }
+                        })
+                        .catch(err => console.warn('Delete error:', err));
+
+                        // 2. Remove card from UI immediately
+                        card.remove();
+                        existingPalletIds.delete(palletId);
+                        updateVerifiedCount();
+                        hideInfoBox();
+                    }
+                };
+                card.appendChild(removeBtn);
+
+                const table = document.createElement('table');
+                table.className = 'pallet-table';
+                table.innerHTML = `<colgroup>
+                    <col class="col-num">
+                    <col class="col-desc">
+                    <col class="col-chk">
+                </colgroup>`;
+
+                // Header row with pallet ID
+                const trHead = document.createElement('tr');
+                trHead.className = 'pallet-id-row';
+                const th = document.createElement('th');
+                th.colSpan = 3;
+                th.style.padding = '5px 3px';
+                th.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:4px; padding-right:22px;">
+                        <input type="text" value="${palletId}" readonly
+                            style="flex:1; min-width:0; border:1px solid #666; background:#f9f2e0; font-weight:bold; text-align:center; font-size:11px; padding:4px 2px;">
+                    </div>`;
+                trHead.appendChild(th);
+                table.appendChild(trHead);
+
+                const items = [
+                    "Pallet Condition",
+                    "HT & Fumigation Stamp on Pallet (If Mandatory)",
+                    "In Wrapping (Top to Bottom)",
+                    "Pallet ID Label",
+                    "Pallet Double Wrapping",
+                    "Quality of Boxes",
+                    "Net & Gross Weight as Per Packing List"
+                ];
+
+                items.forEach((text, idx) => {
+                    const row   = document.createElement('tr');
+                    const tdNum = document.createElement('td');
+                    tdNum.textContent = (idx + 1).toString();
+                    const tdDesc = document.createElement('td');
+                    tdDesc.textContent = text;
+                    const tdChk = document.createElement('td');
+                    const chk   = document.createElement('input');
+                    chk.type    = 'checkbox';
+                    chk.className = 'checkbox-compact';
+                    if (checklistState && checklistState[idx]) chk.checked = true;
+                    tdChk.appendChild(chk);
+                    row.appendChild(tdNum);
+                    row.appendChild(tdDesc);
+                    row.appendChild(tdChk);
+                    table.appendChild(row);
+                });
+
+                card.appendChild(table);
+                return card;
+            }
+
+            // ── Validate Element ID via API then create table ────────
+            function validateAndAdd(rawId) {
+                const id = rawId.trim();
+                if (!id) { scannerInput.focus(); return; }
+
+                if (existingPalletIds.has(id)) {
+                    showErrorBox(`Element ID "${id}" is already added in this session.`);
+                    scannerInput.value = '';
+                    scannerInput.focus();
+                    return;
+                }
+
+                // Call Flask API to validate against PackingList DB
+                fetch(`/api/check_element/${SR_NO}/${encodeURIComponent(id)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status !== 'success') {
+                            showErrorBox(data.message || 'Element ID not found in Packing List.');
+                            scannerInput.value = '';
+                            scannerInput.focus();
+                            return;
+                        }
+                        // Show green info box
+                        showInfoBox(data);
+                        // Create table card
+                        const card = createCompactPalletTable(id, []);
+                        wrapper.appendChild(card);
+                        existingPalletIds.add(id);
+                        updateVerifiedCount();
+
+                        // Attach checkbox change → auto-save
+                        card.querySelectorAll('input[type=checkbox]').forEach(chk => {
+                            chk.addEventListener('change', () => autoSave());
+                        });
+
+                        // Auto-save immediately after adding
+                        autoSave();
+
+                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        scannerInput.value = '';
+                        scannerInput.focus();
+                    })
+                    .catch(() => {
+                        showErrorBox('Server error. Please try again.');
+                        scannerInput.value = '';
+                        scannerInput.focus();
+                    });
+            }
+
+            // ── Keyboard Enter ───────────────────────────────────────
+            scannerInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    validateAndAdd(scannerInput.value);
+                }
+            });
+
+            // ── Button Enter ─────────────────────────────────────────
+            window.triggerScanEntry = function() {
+                validateAndAdd(scannerInput.value);
+            };
+
+            // ── Collect all card data for saving ─────────────────────
+            function collectPayload() {
+                const cards = wrapper.querySelectorAll('.pallet-table-card');
+                const payload = [];
+                cards.forEach(card => {
+                    const eid        = card.dataset.palletId;
+                    const checkboxes = card.querySelectorAll('input[type=checkbox]');
+                    const checklist  = Array.from(checkboxes).map(c => c.checked);
+                    payload.push({ element_id: eid, checklist: checklist });
+                });
+                return payload;
+            }
+
+            // ── Auto-save to DB (silent — no alert) ──────────────────
+            function autoSave() {
+                const payload = collectPayload();
+                if (payload.length === 0) return;
+                fetch(`/save_pallet_verification/${SR_NO}`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') {
+                        console.warn('Auto-save failed:', res.message);
+                    }
+                })
+                .catch(err => console.warn('Auto-save error:', err));
+            }
+
+            // ── Save to DB ────────────────────────────────────────────
+            window.saveData = function() {
+                const payload = collectPayload();
+                if (payload.length === 0) {
+                    alert('No pallets verified. At least one pallet required.');
+                    return;
+                }
+                // Auto-save already runs on every scan & checkbox change.
+                // Do a final save then navigate regardless.
+                fetch(`/save_pallet_verification/${SR_NO}`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                })
+                .then(() => {
+                    // Navigate to photos page regardless of save response
+                    window.location.href = `/photos/${SR_NO}`;
+                })
+                .catch(() => {
+                    // Even if fetch fails, still navigate
+                    window.location.href = `/photos/${SR_NO}`;
+                });
+            };
+
+            // ── Mutation observer for count sync ──────────────────────
+            const observer = new MutationObserver(() => updateVerifiedCount());
+            observer.observe(wrapper, { childList: true });
+
+            // ── Prefill from server-saved data (Jinja) ────────────────
+            const savedPallets = {{ saved_pallets | tojson | safe }};
+            savedPallets.forEach(function(pv) {
+                if (!existingPalletIds.has(pv.element_id)) {
+                    const card = createCompactPalletTable(pv.element_id, pv.checklist);
+                    wrapper.appendChild(card);
+                    existingPalletIds.add(pv.element_id);
+                    // Attach checkbox auto-save for prefilled cards
+                    card.querySelectorAll('input[type=checkbox]').forEach(chk => {
+                        chk.addEventListener('change', () => autoSave());
+                    });
+                }
+            });
+            updateVerifiedCount();
+
+            window.addEventListener('load', () => scannerInput.focus());
+        })();
+
+        /* ============================================================
+           QR CODE SCANNER  — jsQR + getUserMedia
+        ============================================================ */
+        (function() {
+            let qrStream = null;
+            let qrRafId = null;
+            const modal    = document.getElementById('qrModal');
+            const video    = document.getElementById('qr-video');
+            const resultEl = document.getElementById('qr-result-text');
+
+            window.openQrScanner = function() {
+                resultEl.textContent = 'Aiming camera on QR code...';
+                resultEl.style.color = '#aaa';
+                modal.classList.add('active');
+
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width:  { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then(function(stream) {
+                        qrStream = stream;
+                        video.srcObject = stream;
+                        video.play();
+                        video.addEventListener('playing', startDecoding, { once: true });
+                    })
+                    .catch(function(err) {
+                        resultEl.textContent = 'Camera error: ' + err.message;
+                        resultEl.style.color = '#dc3545';
+                    });
+            };
+
+            function startDecoding() {
+                const canvas = document.createElement('canvas');
+                const ctx    = canvas.getContext('2d');
+
+                function tick() {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width  = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                        const code = jsQR(imgData.data, imgData.width, imgData.height, {
+                            inversionAttempts: 'dontInvert'
+                        });
+
+                        if (code && code.data && code.data.trim() !== '') {
+                            const qrValue = code.data.trim();
+                            resultEl.textContent = '✅ Scanned: ' + qrValue;
+                            resultEl.style.color = '#28a745';
+
+                            // Fill input and trigger validated table creation
+                            const scannerInput = document.getElementById('palletScanner');
+                            scannerInput.value = qrValue;
+
+                            setTimeout(function() {
+                                closeQrScanner();
+                                window.triggerScanEntry();  // goes through validation API
+                            }, 600);
+                            return; // stop loop
+                        }
+                    }
+                    qrRafId = requestAnimationFrame(tick);
+                }
+                qrRafId = requestAnimationFrame(tick);
+            }
+
+            window.closeQrScanner = function() {
+                if (qrRafId) { cancelAnimationFrame(qrRafId); qrRafId = null; }
+                if (qrStream) {
+                    qrStream.getTracks().forEach(t => t.stop());
+                    qrStream = null;
+                }
+                video.srcObject = null;
+                modal.classList.remove('active');
+            };
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7 Point Checklist SACPL Domestic</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: white;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            padding: 15mm;
+            box-sizing: border-box;
+            background-color: white;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .header-text {
+            flex-grow: 1;
+        }
+        .company-name {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14pt;
+            margin-bottom: 2px;
+        }
+        .old-name {
+            text-align: center;
+            font-style: italic;
+            font-size: 8pt;
+            margin-bottom: 5px;
+        }
+        .iso-code {
+            font-size: 9pt;
+            text-align: right;
+        }
+        .form-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 5px;
+        }
+        .logo {
+            position: relative;
+            width: 60px;
+            height: 65px;
+            right: 630px;
+            top: -18px;
+        }
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .info-item {
+            margin-bottom: 8px;
+            width: 48%;
+            display: flex;
+            align-items: center;
+        }
+        .info-item label {
+            min-width: 100px;
+            font-size: 10pt;
+        }
+        .info-item input {
+            flex-grow: 1;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 3px;
+            font-size: 10pt;
+        }
+        .instructions {
+            font-size: 9pt;
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border-left: 3px solid #ccc;
+        }
+        .checklist-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 10pt;
+        }
+        .checklist-table th, .checklist-table td {
+            border: 1px solid #000;
+            padding: 2px;
+            text-align: left;
+        }
+        .checklist-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .checklist-table input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        .checklist-table input[type="text"] {
+            width: 60%;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 3px;
+            margin-left: 10px;
+        }
+        .below-table-img {
+            width: 100%;
+            max-height: 180px;
+            object-fit: contain;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        .driver-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .driver-info-item {
+            margin-bottom: 8px;
+            width: 48%;
+            display: flex;
+            align-items: center;
+        }
+        .driver-info-item label {
+            min-width: 120px;
+            font-size: 10pt;
+        }
+        .driver-info-item input {
+            flex-grow: 1;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 3px;
+            font-size: 10pt;
+        }
+        .note {
+            font-style: italic;
+            font-size: 9pt;
+            margin: 15px 0;
+            padding: 5px;
+            border-top: 1px solid #000;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .signature-box {
+            width: 30%;
+            border-top: 1px solid #000;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 10pt;
+        }
+        .datetime-input {
+            display: inline-block;
+            width: 180px;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 3px;
+            font-size: 10pt;
+        }
+        .name-input {
+            display: inline-block;
+            width: 120px;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 3px;
+            font-size: 10pt;
+        }
+
+        .top-action-bar { background: #fff; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1001; }
+        .side-stepper { width: 60px; height: 100vh; background: #2c3e50; position: fixed; left: 0; top: 0; transition: 0.3s; z-index: 1000; padding-top: 60px; overflow: hidden; }
+        .side-stepper:hover { width: 220px; }
+        .step-item { color: white; padding: 15px 20px; display: flex; align-items: center; text-decoration: none; white-space: nowrap; cursor: pointer; }
+        .step-num { min-width: 25px; height: 25px; background: #7f8c8d; border-radius: 50%; text-align: center; margin-right: 15px; font-size: 12px; line-height: 25px; }
+        .step-item.active .step-num { background: #00FFFF; color: #000; }
+        .main-container { margin-left: 60px; }
+    </style>
+</head>
+<body>
+
+<div class="top-action-bar">
+    <div>
+        <span class="fw-bold">Application No: </span>
+        <a href="/" style="text-decoration: none; cursor: pointer;" class="text-primary fw-bold" title="Go to Dashboard">
+            {{ data.sr_no }}
+        </a>
+    </div>
+        <div>
+            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal">Vehicle Reject</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">Back</button>
+            <button class="btn btn-primary btn-sm ms-2" onclick="submitData(true)">Save & Next ➔</button>
+        </div>
+    </div>
+
+    <div class="side-stepper">
+        <div class="step-item active"><div class="step-num">1</div> <span>7 Point Checklist</span></div>
+        <div class="step-item"><div class="step-num">2</div> <span>Packing List</span></div>
+        <div class="step-item"><div class="step-num">3</div> <span>Pallet Verification</span></div>
+        <div class="step-item"><div class="step-num">4</div> <span>Photos</span></div>
+        <div class="step-item"><div class="step-num">5</div> <span>Document Checklist</span></div>
+    </div>
+
+    <div class="page">
+        <div class="header">
+            <div class="header-text">
+                <div class="company-name">SKAPS ADVANCED COMPOSITES PVT LTD</div>
+                <div class="old-name">[FORMERLY KNOWN AS ANJANI UDYOG PRIVATE LIMITED]</div>
+                <div class="form-title">Domestic Driver Sign in & 7-Point Inspection Checklist for Containers</div>
+            </div>
+            <div>
+                <img src="{{ url_for('static', filename='image/skaps logo.jpeg') }}" class="logo">
+                <div class="iso-code">F:SHP:18</div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-item">
+                <label>Date:</label>
+                <input type="date" value="{{ data.entry_date }}">
+            </div>
+            <div class="info-item">
+                <label>Supplier:</label>
+                <input type="text" id="customer_name" value="{{ data.customer_name }}">
+            </div>
+            <div class="info-item">
+                <label>Container No:</label>
+                <input type="text" id="container_no" value="{{ data.container_no }}">
+            </div>
+            <div class="info-item">
+                <label>Seal No:</label>
+                <input type="text" id="seal_no" value="{{ data.seal_no }}">
+            </div>
+        </div>
+
+        <div class="instructions">
+            <p>Instructions: Fill out the checklist by referring to the drawing below and the instructions provided on the next page.</p>
+        </div>
+
+        <table class="checklist-table">
+            <tr>
+                <th style="width:30%;">Inspection Point</th>
+                <th>Condition: Indicate whether condition is good or bad; add comments as needed.</th>
+            </tr>
+            <tr>
+                <td>1. Outside / Undercarriage</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_outside" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_outside" value="bad"> Bad
+                    <input type="text" name="comments_outside" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>2. Inside and outside doors</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_doors" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_doors" value="bad"> Bad
+                    <input type="text" name="comments_doors" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>3. Right side</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_right_side" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_right_side" value="bad"> Bad
+                    <input type="text" name="comments_right_side" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>4. Left side</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_left_side" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_left_side" value="bad"> Bad
+                    <input type="text" name="comments_left_side" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>5. Front wall</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_front_wall" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_front_wall" value="bad"> Bad
+                    <input type="text" name="comments_front_wall" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>6. Ceiling / roof</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_ceiling" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_ceiling" value="bad"> Bad
+                    <input type="text" name="comments_ceiling" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>7. Container Floor</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_floor" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_floor" value="bad"> Bad
+                    <input type="text" name="comments_floor" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>Door Locking Mechanism</td>
+                <td>
+                    <input type="checkbox" class="condition-check" name="condition_locking_mechanism" value="good"> Good
+                    <input type="checkbox" class="condition-check" name="condition_locking_mechanism" value="bad"> Bad
+                    <input type="text" name="comments_locking_mechanism" placeholder="Comments">
+                </td>
+            </tr>
+            <tr>
+                <td>Container inspected by:<br>Date/time:</td>
+                <td>
+                    <input type="text" class="name-input" name="inspected_by" placeholder="Name">
+                    <input type="datetime-local" class="datetime-input" name="inspection_date_time" placeholder="Date/Time">
+                </td>
+            </tr>
+            <tr>
+                <td>Container sealed & inspected by:<br>Date/time:</td>
+                <td>
+                    <input type="text" class="name-input" name="sealed_by" placeholder="Name">
+                    <input type="datetime-local" class="datetime-input" name="seal_date_time" placeholder="Date/Time">
+                </td>
+            </tr>
+        </table>
+
+        <img src="{{ url_for('static', filename='image/container.PNG') }}" class="below-table-img" alt="Container Diagram">
+
+        <div class="driver-info">
+        <div class="driver-info-item">
+            <label>Driver Name:</label>
+            <input type="text" id="driver_name" value="{{ data.driver_name }}">
+        </div>
+        <div class="driver-info-item">
+            <label>Driver Phone No:</label>
+            <input type="text" id="driver_phone" value="{{ data.driver_phone }}">
+        </div>
+        <div class="driver-info-item">
+            <label>License No:</label>
+            <input type="text" id="license_no" value="{{ data.license_no }}">
+        </div>
+        <div class="driver-info-item">
+            <label>Destination:</label>
+            <input type="text" id="destination" value="{{ data.destination }}">
+        </div>
+        <div class="driver-info-item">
+            <label>Trailer No.:</label>
+            <input type="text" id="vehicle_no" value="{{ data.vehicle_no }}">
+        </div>
+        <div class="driver-info-item">
+            <label>Transporter Name:</label>
+            <input type="text" id="transporter" value="{{ data.transporter }}">
+        </div>
+        <div class="driver-info-item" style="width:100%;">
+            <label>Time driver arrived at SKAPS:</label>
+            <input type="time" style="width:150px;" id="arrival_time" value="{{ data.arrival_time }}">
+        </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">Driver Signature</div>
+            <div class="signature-box">Loader</div>
+            <div class="signature-box">Scanner</div>
+        </div>
+        <div class="note">Note: - We will not be responsible for any damages to the trailer while loading</div>
+    </div>
+
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white"><h5>Vehicle Rejection Remark</h5></div>
+                <div class="modal-body">
+                    <textarea id="rejection_remark" class="form-control" rows="4" placeholder="Reason for rejection..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmRejection()">Submit Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // English Remark: Global variable to track if the vehicle is already rejected
+    const vehicleIsRejected = {{ 'true' if saved_data and saved_data.is_rejected else 'false' }};
+
+    // English Remark: Function to handle vehicle rejection and dashboard redirect
+    function confirmRejection() {
+        const remark = document.getElementById('rejection_remark').value;
+        if(!remark) return alert("Please enter rejection reason!");
+        
+        // English Remark: Triggering submission with isRejectAction set to true
+        submitData(false, true); 
+    }
+
+    // English Remark: Main function to collect data and communicate with Flask backend
+    function submitData(isNext, isRejectAction = false) {
+        
+        // English Remark: Logic to block forward navigation for rejected vehicles
+        if (isNext && vehicleIsRejected) {
+            alert("This Vehicle is Rejected. You cannot proceed to the next step.");
+            return;
+        }
+
+        const checklistItems = {};
+        const rows = document.querySelectorAll('.checklist-table tr');
+        
+        rows.forEach((row, index) => {
+            if (index === 0) return;
+            const pointName = row.cells[0].innerText.trim();
+            const conditionInput = row.querySelector('input[type="checkbox"]:checked');
+            const commentValue = row.querySelector('input[type="text"]')?.value || "";
+
+            checklistItems[pointName] = {
+                "condition": conditionInput ? conditionInput.value : "",
+                "comment": commentValue,
+                "name": row.querySelector('.name-input')?.value || "",
+                "datetime": row.querySelector('input[type="datetime-local"]')?.value || ""
+            };
+        });
+
+        const payload = {
+            sr_no: "{{ data.sr_no }}",
+            form_data: checklistItems,
+            // English Remark: Setting is_rejected flag based on current action or existing status
+            is_rejected: isRejectAction || vehicleIsRejected,
+            remark: document.getElementById('rejection_remark').value,
+            shipping_updates: {
+                customer_name: document.getElementById('customer_name').value,
+                container_no: document.getElementById('container_no').value,
+                seal_no: document.getElementById('seal_no').value,
+                driver_name: document.getElementById('driver_name').value,
+                driver_phone: document.getElementById('driver_phone').value,
+                license_no: document.getElementById('license_no').value,
+                destination: document.getElementById('destination').value,
+                vehicle_no: document.getElementById('vehicle_no').value,
+                transporter: document.getElementById('transporter').value,
+                arrival_time: document.getElementById('arrival_time').value
+            }
+        };
+        
+        fetch('/save_checklist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(res => res.json()).then(data => {
+            if (isRejectAction) {
+                alert("Vehicle Rejected Successfully!");
+                window.location.href = '/'; // Dashboard par redirect
+            } else {
+                alert(data.message);
+                if(isNext) {
+                    window.location.href = '/packing_list/{{ data.sr_no }}';
+                } else {
+                    location.reload(); 
+                }
+            }
+        }).catch(err => {
+            console.error("Error:", err);
+            alert("Failed to save data. Please check connection.");
+        });
+    }
+
+window.onload = function() {
+    // English Remark: Safely injecting Python dictionary/string into JavaScript using 'tojson' filter
+    const savedDataRaw = {{ (saved_data.checklist_json if saved_data and saved_data.checklist_json else '{}') | tojson | safe }};
+    
+    let checklistObj = {};
+    try {
+        // Professional Remark: Ensuring the data is treated as an object regardless of its input format
+        checklistObj = typeof savedDataRaw === 'string' ? JSON.parse(savedDataRaw) : savedDataRaw;
+    } catch (e) {
+        console.error("Error parsing checklist data:", e);
+    }
+    
+    const rows = document.querySelectorAll('.checklist-table tr');
+    rows.forEach((row, index) => {
+        if (index === 0) return; // Header skip karo
+        
+        // English Remark: Extracting the point name from the first cell to use as a key
+        const pointName = row.cells[0].innerText.trim();
+        
+        if (checklistObj[pointName]) {
+            const item = checklistObj[pointName];
+            
+            // 1. Checkbox pre-fill logic (Good/Bad)
+            if (item.condition) {
+                const cb = row.querySelector(`input[value="${item.condition}"]`);
+                if (cb) cb.checked = true;
+            }
+            
+            // 2. Comment pre-fill logic
+            const commentInput = row.querySelector('input[type="text"]:not(.name-input)');
+            if (commentInput) {
+                commentInput.value = item.comment || "";
+            }
+
+            // 3. Date & Time pre-fill logic
+            const dateTimeInput = row.querySelector('input[type="datetime-local"]');
+            if (dateTimeInput && item.datetime) {
+                dateTimeInput.value = item.datetime;
+            }
+
+            // 4. Name input pre-fill (Inspected by / Sealed by)
+            const nameInput = row.querySelector('.name-input');
+            if (nameInput && item.name) {
+                nameInput.value = item.name;
+            }
+        }
+    });
+
+    // Professional Remark: Pre-filling the rejection remark if it exists in the database
+    const savedRemark = `{{ saved_data.rejection_remark if saved_data and saved_data.rejection_remark else '' }}`;
+    const remarkTextArea = document.getElementById('rejection_remark');
+    if (remarkTextArea && savedRemark) {
+        remarkTextArea.value = savedRemark;
+    }
+
+    // English Remark: Adding a visual indicator if the vehicle has been rejected
+    if (vehicleIsRejected && savedRemark) {
+        const pageHeader = document.querySelector('.page');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger';
+        alertDiv.style.marginTop = '10px';
+        alertDiv.innerHTML = `<strong>Vehicle Rejected!</strong> Reason: ${savedRemark}`;
+        pageHeader.insertBefore(alertDiv, pageHeader.firstChild);
+    }
+};
+
+</script>
+
+</body>
+</html>

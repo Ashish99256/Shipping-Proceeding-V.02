@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 4: Photo Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; overflow-x: hidden; }
+
+        .top-action-bar { background:#fff; height:50px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; box-shadow:0 2px 4px rgba(0,0,0,.1); position:sticky; top:0; z-index:1001; }
+        .side-stepper { width:60px; height:100vh; background:#2c3e50; position:fixed; left:0; top:0; transition:.3s; z-index:1000; padding-top:60px; overflow:hidden; }
+        .side-stepper:hover { width:220px; }
+        .step-item { color:white; padding:15px 20px; display:flex; align-items:center; text-decoration:none; white-space:nowrap; }
+        .step-num { min-width:25px; height:25px; background:#7f8c8d; border-radius:50%; text-align:center; margin-right:15px; font-size:12px; line-height:25px; }
+        .step-item.active   .step-num { background:#00FFFF; color:#000; }
+        .step-item.completed .step-num { background:#2ecc71; }
+
+        .main-wrapper { margin-left:60px; height:calc(100vh - 50px); display:flex; }
+
+        /* ── LEFT PANEL ── */
+        .left-panel { width:300px; flex-shrink:0; background:#fff; border-right:2px solid #000; padding:16px; overflow-y:auto; }
+
+        .photo-stats { display:flex; justify-content:space-between; background:#e9ecef; border:1px solid #ccc; border-radius:4px; padding:7px 12px; font-weight:600; font-size:13px; margin-bottom:14px; }
+        .photo-stats .stat-total  { color:#003366; }
+        .photo-stats .stat-upload { color:#28a745; }
+
+        .zone-title { font-weight:700; font-size:12px; color:#003366; margin:0 0 6px 0; text-transform:uppercase; letter-spacing:.5px; }
+
+        .drop-zone {
+            border:2px dashed #003366; border-radius:8px;
+            padding:20px 10px; text-align:center; cursor:pointer;
+            background:#f0f4ff; transition:background .2s; position:relative;
+        }
+        .drop-zone:hover, .drop-zone.drag-over { background:#dce8ff; border-color:#001a4d; }
+        .drop-zone i { font-size:26px; color:#003366; }
+        .drop-zone p { font-size:11px; color:#555; margin:4px 0 0 0; }
+
+        .capture-zone {
+            border:2px dashed #28a745; border-radius:8px;
+            padding:20px 10px; text-align:center; cursor:pointer;
+            background:#f0fff4; transition:background .2s; margin-top:10px;
+        }
+        .capture-zone:hover { background:#d4edda; }
+        .capture-zone i { font-size:26px; color:#28a745; }
+        .capture-zone p { font-size:11px; color:#555; margin:4px 0 0 0; }
+
+        /* ── Camera Modal ── */
+        #cameraModal {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.88); z-index:4000;
+            flex-direction:column; align-items:center; justify-content:center;
+        }
+        #cameraModal.active { display:flex; }
+        #cameraBox {
+            background:#111; border-radius:10px; overflow:hidden;
+            width:min(480px, 95vw); display:flex; flex-direction:column;
+        }
+        #cameraBox .cam-header {
+            background:#003366; color:#fff; padding:10px 14px;
+            font-weight:700; font-size:13px; display:flex;
+            justify-content:space-between; align-items:center;
+        }
+        #cameraBox .cam-header button {
+            background:rgba(255,255,255,.15); color:#fff; border:none;
+            border-radius:4px; padding:3px 10px; cursor:pointer; font-size:12px;
+        }
+        #camVideo { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#000; }
+        #camCanvas { display:none; }
+        .cam-controls {
+            background:#1a1a1a; padding:14px; display:flex;
+            gap:10px; justify-content:center; align-items:center;
+        }
+        #camSnapBtn {
+            width:60px; height:60px; border-radius:50%;
+            background:#fff; border:4px solid #aaa;
+            cursor:pointer; font-size:22px;
+            display:flex; align-items:center; justify-content:center;
+            transition:transform .1s;
+        }
+        #camSnapBtn:active { transform:scale(.9); }
+        #camSwitchBtn {
+            background:rgba(255,255,255,.15); color:#fff; border:none;
+            border-radius:6px; padding:8px 14px; cursor:pointer; font-size:12px;
+        }
+        #camSwitchBtn:hover { background:rgba(255,255,255,.28); }
+        #camStatus { color:#aaa; font-size:11px; text-align:center; padding:6px; background:#1a1a1a; }
+
+        #uploadQueueList { list-style:none; padding:0; margin:10px 0 0 0; }
+        #uploadQueueList li { font-size:11px; padding:5px 8px; border-radius:4px; margin-bottom:4px; background:#e9ecef; display:flex; align-items:center; gap:6px; }
+        #uploadQueueList li .q-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        #uploadQueueList li .q-status { font-size:10px; font-weight:700; white-space:nowrap; }
+        #uploadQueueList li.uploading { background:#fff3cd; }
+        #uploadQueueList li.done      { background:#d4edda; }
+        #uploadQueueList li.error     { background:#f8d7da; }
+
+        /* ── RIGHT PANEL ── */
+        .right-panel { flex:1; padding:16px 20px; overflow-y:auto; background:#f0f2f5; }
+        .right-panel h5 { font-weight:700; color:#003366; margin-bottom:14px; font-size:15px; }
+
+        .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(175px,1fr)); gap:14px; }
+
+        .photo-item { background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.1); overflow:hidden; position:relative; cursor:pointer; transition:transform .15s, box-shadow .15s; }
+        .photo-item:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,.18); }
+        .photo-item img { width:100%; height:140px; object-fit:cover; display:block; }
+        .photo-footer { padding:5px 8px; font-size:10px; color:#555; }
+        .photo-footer .fname { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+        .path-link-row { padding:4px 8px; background:#f8f9fa; border-top:1px solid #eee; font-size:9.5px; }
+        .path-link-row a { color:#003366; text-decoration:none; word-break:break-all; }
+        .path-link-row a:hover { text-decoration:underline; }
+
+        .btn-del-photo { position:absolute; top:5px; right:5px; background:rgba(220,53,69,.85); color:#fff; border:none; border-radius:4px; width:24px; height:24px; font-size:12px; cursor:pointer; display:none; align-items:center; justify-content:center; }
+        .photo-item:hover .btn-del-photo { display:flex; }
+        .btn-del-photo:hover { background:#a71d2a; }
+
+        .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:#aaa; }
+        .empty-state i { font-size:48px; display:block; margin-bottom:12px; }
+
+        /* ── LIGHTBOX ── */
+        #lightboxModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:3000; align-items:center; justify-content:center; flex-direction:column; }
+        #lightboxModal.active { display:flex; }
+        #lbImgWrap { position:relative; display:flex; align-items:center; justify-content:center; max-width:88vw; max-height:78vh; overflow:hidden; }
+        #lightboxImg { max-width:88vw; max-height:78vh; object-fit:contain; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,.5); transition:transform .25s; transform-origin:center center; cursor:zoom-in; }
+        #lightboxImg.zoomed { cursor:zoom-out; }
+        #lbClose { position:fixed; top:18px; right:22px; background:#dc3545; color:#fff; border:none; border-radius:50%; width:34px; height:34px; font-size:17px; cursor:pointer; font-weight:700; z-index:3100; display:flex; align-items:center; justify-content:center; }
+        .lb-nav { position:fixed; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:3100; transition:background .15s; }
+        #lbPrev { left:14px; } #lbNext { right:14px; }
+        .lb-nav:hover { background:rgba(255,255,255,.3); }
+        .lb-nav:disabled { opacity:.25; cursor:default; }
+        #lbCaption { color:#ccc; font-size:11px; margin-top:10px; text-align:center; max-width:80vw; word-break:break-all; }
+        .lb-zoom-bar { display:flex; gap:8px; margin-top:10px; }
+        .lb-zoom-bar button { background:rgba(255,255,255,.13); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:4px; padding:4px 14px; font-size:12px; cursor:pointer; }
+        .lb-zoom-bar button:hover { background:rgba(255,255,255,.28); }
+        #lbCounter { color:#aaa; font-size:11px; margin-top:6px; }
+    </style>
+</head>
+<body>
+
+<div class="top-action-bar">
+    <div>
+        <span class="fw-bold">Application No: </span>
+        <a href="/" class="text-primary fw-bold" style="text-decoration:none;">{{ data.sr_no }}</a>
+    </div>
+    <div>
+        <button class="btn btn-secondary btn-sm" onclick="window.location.href='/pallet_packing/{{ data.sr_no }}'">Back</button>
+        <button class="btn btn-primary btn-sm ms-2" onclick="saveAndNext()">Save & Next Step ➔</button>
+    </div>
+</div>
+
+<div class="side-stepper">
+    <a href="/checklist/{{ data.sr_no }}"      class="step-item completed"><div class="step-num">1</div><span>7 Point Checklist</span></a>
+    <a href="/packing_list/{{ data.sr_no }}"   class="step-item completed"><div class="step-num">2</div><span>Packing List</span></a>
+    <a href="/pallet_packing/{{ data.sr_no }}" class="step-item completed"><div class="step-num">3</div><span>Pallet Verification</span></a>
+    <div class="step-item active"><div class="step-num">4</div><span>Photos</span></div>
+    <div class="step-item"><div class="step-num">5</div><span>Document Checklist</span></div>
+</div>
+
+<div class="main-wrapper">
+
+    <!-- ══ LEFT PANEL ══ -->
+    <div class="left-panel">
+
+        <div class="photo-stats">
+            <span class="stat-total">Total Photos: <span id="totalCount">{{ photos | length }}</span></span>
+        </div>
+
+        <!-- Upload from Device -->
+        <p class="zone-title"><i class="fas fa-folder-open me-1"></i>Upload from Device</p>
+        <div class="drop-zone" id="dropZone"
+             onclick="document.getElementById('fileInputMulti').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p><strong>Click to browse</strong> or drag & drop</p>
+            <p style="color:#888; font-size:10px;">JPG · PNG · HEIC · Multiple files OK</p>
+        </div>
+        <input type="file" id="fileInputMulti" accept="image/*" multiple hidden onchange="handleFiles(this.files)">
+
+        <!-- Capture from Camera -->
+        <p class="zone-title mt-3"><i class="fas fa-camera me-1"></i>Capture from Camera</p>
+        <div class="capture-zone" onclick="openCameraModal()">
+            <i class="fas fa-camera"></i>
+            <p><strong>Open Camera</strong></p>
+            <p style="color:#888; font-size:10px;">Live camera — snap & upload directly</p>
+        </div>
+
+        <!-- Upload Queue -->
+        <ul id="uploadQueueList"></ul>
+    </div>
+
+    <!-- ══ RIGHT PANEL ══ -->
+    <div class="right-panel">
+        <h5>
+            <i class="fas fa-images me-2"></i>Loading Photos
+            <span class="badge bg-secondary ms-1" style="font-size:11px;" id="photoCountBadge">{{ photos | length }}</span>
+        </h5>
+
+        <div class="photo-grid" id="photoGrid">
+            {% if photos %}
+                {% for photo in photos %}
+                <div class="photo-item" id="card-{{ photo.id }}"
+                     onclick="openLightbox({{ photo.id }})">
+                    <img src="/static/{{ photo.file_path }}" alt="photo" loading="lazy">
+                    <button class="btn-del-photo" title="Delete photo"
+                            onclick="event.stopPropagation(); deletePhoto({{ photo.id }})">✕</button>
+                    <div class="photo-footer">
+                        <span class="fname">{{ photo.file_path.split('/')[-1] }}</span>
+                    </div>
+                    <div class="path-link-row">
+                        <a href="/static/{{ photo.file_path }}" target="_blank" onclick="event.stopPropagation()">
+                            <i class="fas fa-link" style="font-size:8px;"></i>
+                            {{ photo.file_path }}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-camera-retro"></i>
+                    <p>No photos yet.<br>Upload or capture from the left panel.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ══ CAMERA MODAL ══ -->
+<div id="cameraModal">
+    <div id="cameraBox">
+        <div class="cam-header">
+            <span>📷 Camera Capture</span>
+            <button onclick="closeCameraModal()">✕ Close</button>
+        </div>
+        <video id="camVideo" autoplay playsinline muted></video>
+        <canvas id="camCanvas"></canvas>
+        <div class="cam-controls">
+            <button id="camSwitchBtn" onclick="switchCamera()" title="Switch camera">🔄 Switch</button>
+            <button id="camSnapBtn" onclick="snapPhoto()" title="Take photo">📸</button>
+        </div>
+        <div id="camStatus">Camera starting…</div>
+    </div>
+</div>
+
+<!-- ══ LIGHTBOX MODAL ══ -->
+<div id="lightboxModal" onclick="lbBgClick(event)">
+    <button id="lbClose" onclick="closeLightbox()">✕</button>
+    <button class="lb-nav" id="lbPrev" onclick="lbNav(-1)">&#8249;</button>
+
+    <div id="lbImgWrap">
+        <img id="lightboxImg" src="" alt="" onclick="toggleZoom()">
+    </div>
+
+    <div class="lb-zoom-bar">
+        <button onclick="zoomBy(-0.25)">－ Zoom Out</button>
+        <button onclick="zoomReset()">⊙ Reset</button>
+        <button onclick="zoomBy(0.25)">＋ Zoom In</button>
+    </div>
+    <div id="lbCounter"></div>
+    <div id="lbCaption"></div>
+
+    <button class="lb-nav" id="lbNext" onclick="lbNav(1)">&#8250;</button>
+</div>
+
+<script>
+    const SR_NO = "{{ data.sr_no }}";
+
+    /* ══════════════════════════════════════════════
+       IMAGE COMPRESSION  (resize → 800px, quality 0.82)
+    ══════════════════════════════════════════════ */
+    function compressImage(file, maxWidth = 800, quality = 0.82) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width, h = img.height;
+                    if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(blob => {
+                        resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+                    }, 'image/jpeg', quality);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* ══════════════════════════════════════════════
+       UPLOAD QUEUE  (sequential, one at a time)
+    ══════════════════════════════════════════════ */
+    let uploadQueue = [];
+    let isUploading = false;
+
+    function handleFiles(fileList) {
+        Array.from(fileList).forEach(f => {
+            uploadQueue.push(f);
+            addQueueItem(f.name);
+        });
+        if (!isUploading) processQueue();
+    }
+
+    async function processQueue() {
+        if (!uploadQueue.length) { isUploading = false; return; }
+        isUploading = true;
+
+        const file = uploadQueue.shift();
+        updateQueueItem(file.name, 'uploading', '⏳ Compressing…');
+
+        try {
+            const compressed = await compressImage(file);
+            updateQueueItem(file.name, 'uploading', '⬆️ Uploading…');
+
+            const fd = new FormData();
+            fd.append('photo', compressed, compressed.name);
+
+            const res  = await fetch(`/upload_photo/${SR_NO}`, { method:'POST', body:fd });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                updateQueueItem(file.name, 'done', '✅ Done');
+                appendPhotoCard(data.photo_id, data.url, data.path);
+                updateCount(1);
+            } else {
+                updateQueueItem(file.name, 'error', '❌ ' + data.message);
+            }
+        } catch(err) {
+            updateQueueItem(file.name, 'error', '❌ Upload failed');
+            console.error(err);
+        }
+        processQueue();
+    }
+
+    function addQueueItem(name) {
+        const li = document.createElement('li');
+        li.dataset.name = name;
+        li.innerHTML = `<span class="q-name">${name}</span><span class="q-status">⏳ Queued</span>`;
+        document.getElementById('uploadQueueList').appendChild(li);
+    }
+
+    function updateQueueItem(name, cls, txt) {
+        const li = [...document.querySelectorAll('#uploadQueueList li')]
+                   .find(el => el.dataset.name === name);
+        if (!li) return;
+        li.className = cls;
+        li.querySelector('.q-status').textContent = txt;
+        if (cls === 'done') setTimeout(() => li.remove(), 3000);
+    }
+
+    /* ══════════════════════════════════════════════
+       DRAG & DROP
+    ══════════════════════════════════════════════ */
+    function onDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+    function onDragLeave()  { document.getElementById('dropZone').classList.remove('drag-over'); }
+    function onDrop(e)      { e.preventDefault(); onDragLeave(); handleFiles(e.dataTransfer.files); }
+
+    /* ══════════════════════════════════════════════
+       APPEND PHOTO CARD DYNAMICALLY
+    ══════════════════════════════════════════════ */
+    function appendPhotoCard(photoId, url, path) {
+        document.getElementById('emptyState')?.remove();
+        const fname = path.split('/').pop();
+        const div = document.createElement('div');
+        div.className = 'photo-item';
+        div.id = 'card-' + photoId;
+        div.setAttribute('onclick', `openLightbox(${photoId})`);
+        div.innerHTML = `
+            <img src="${url}" alt="photo" loading="lazy">
+            <button class="btn-del-photo" title="Delete photo"
+                    onclick="event.stopPropagation();deletePhoto(${photoId})">✕</button>
+            <div class="photo-footer"><span class="fname">${fname}</span></div>
+            <div class="path-link-row">
+                <a href="${url}" target="_blank" onclick="event.stopPropagation()">
+                    <i class="fas fa-link" style="font-size:8px;"></i> ${path}
+                </a>
+            </div>`;
+        document.getElementById('photoGrid').appendChild(div);
+        lbPhotos.push({ id: photoId, url, caption: path });
+    }
+
+    function updateCount(delta) {
+        ['totalCount','photoCountBadge'].forEach(id => {
+            const el = document.getElementById(id);
+            el.textContent = Math.max(0, parseInt(el.textContent||0) + delta);
+        });
+    }
+
+    /* ══════════════════════════════════════════════
+       DELETE PHOTO
+    ══════════════════════════════════════════════ */
+    function deletePhoto(photoId) {
+        if (!confirm('Delete this photo? This cannot be undone.')) return;
+        fetch(`/delete_photo/${photoId}`, { method:'DELETE' })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    document.getElementById('card-' + photoId)?.remove();
+                    lbPhotos = lbPhotos.filter(p => p.id != photoId);
+                    updateCount(-1);
+                    if (!document.querySelector('.photo-item')) {
+                        document.getElementById('photoGrid').innerHTML =
+                            `<div class="empty-state" id="emptyState">
+                                <i class="fas fa-camera-retro"></i>
+                                <p>No photos yet.</p>
+                            </div>`;
+                    }
+                    if (document.getElementById('lightboxModal').classList.contains('active')) closeLightbox();
+                } else { alert('❌ ' + res.message); }
+            })
+            .catch(() => alert('Server error.'));
+    }
+
+    /* ══════════════════════════════════════════════
+       LIGHTBOX
+    ══════════════════════════════════════════════ */
+    let lbPhotos = [
+        {% for photo in photos %}
+        { id: {{ photo.id }}, url: '/static/{{ photo.file_path | replace("\\", "/") }}', caption: '{{ photo.file_path | replace("\\", "/") }}' },
+        {% endfor %}
+    ];
+    let lbIdx   = 0;
+    let lbZoom  = 1;
+
+    function openLightbox(photoId) {
+        const idx = lbPhotos.findIndex(p => p.id == photoId);
+        lbIdx  = idx >= 0 ? idx : 0;
+        lbZoom = 1;
+        renderLb();
+        document.getElementById('lightboxModal').classList.add('active');
+    }
+
+    function renderLb() {
+        const p   = lbPhotos[lbIdx];
+        const img = document.getElementById('lightboxImg');
+        img.src = p.url;
+        img.style.transform = `scale(${lbZoom})`;
+        img.classList.toggle('zoomed', lbZoom > 1);
+        document.getElementById('lbCaption').textContent = p.caption;
+        document.getElementById('lbCounter').textContent = `${lbIdx + 1} / ${lbPhotos.length}`;
+        document.getElementById('lbPrev').disabled = lbIdx === 0;
+        document.getElementById('lbNext').disabled = lbIdx === lbPhotos.length - 1;
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightboxModal').classList.remove('active');
+        lbZoom = 1;
+    }
+    function lbBgClick(e) { if (e.target === document.getElementById('lightboxModal')) closeLightbox(); }
+
+    function lbNav(dir) {
+        const n = lbIdx + dir;
+        if (n < 0 || n >= lbPhotos.length) return;
+        lbIdx = n; lbZoom = 1; renderLb();
+    }
+
+    function toggleZoom() {
+        lbZoom = lbZoom === 1 ? 2.5 : 1;
+        const img = document.getElementById('lightboxImg');
+        img.style.transform = `scale(${lbZoom})`;
+        img.classList.toggle('zoomed', lbZoom > 1);
+    }
+    function zoomBy(d) {
+        lbZoom = Math.min(5, Math.max(0.5, lbZoom + d));
+        const img = document.getElementById('lightboxImg');
+        img.style.transform = `scale(${lbZoom})`;
+        img.classList.toggle('zoomed', lbZoom > 1);
+    }
+    function zoomReset() {
+        lbZoom = 1;
+        const img = document.getElementById('lightboxImg');
+        img.style.transform = 'scale(1)';
+        img.classList.remove('zoomed');
+    }
+
+    document.addEventListener('keydown', e => {
+        if (!document.getElementById('lightboxModal').classList.contains('active')) return;
+        if (e.key === 'ArrowLeft')  lbNav(-1);
+        if (e.key === 'ArrowRight') lbNav(1);
+        if (e.key === 'Escape')     closeLightbox();
+        if (e.key === '+' || e.key === '=') zoomBy(0.25);
+        if (e.key === '-')          zoomBy(-0.25);
+    });
+
+    /* ══════════════════════════════════════════════
+       CAMERA MODAL  — getUserMedia
+    ══════════════════════════════════════════════ */
+    let camStream    = null;
+    let camFacingMode = 'environment'; // start with back camera
+
+    async function openCameraModal() {
+        document.getElementById('cameraModal').classList.add('active');
+        await startCamera();
+    }
+
+    async function startCamera() {
+        // Stop existing stream if any
+        if (camStream) {
+            camStream.getTracks().forEach(t => t.stop());
+            camStream = null;
+        }
+
+        const statusEl = document.getElementById('camStatus');
+        statusEl.textContent = 'Starting camera…';
+
+        const constraints = {
+            video: {
+                facingMode: { ideal: camFacingMode },
+                width:  { ideal: 1280 },
+                height: { ideal: 960 }
+            },
+            audio: false
+        };
+
+        try {
+            camStream = await navigator.mediaDevices.getUserMedia(constraints);
+            const video = document.getElementById('camVideo');
+            video.srcObject = camStream;
+            await video.play();
+            statusEl.textContent = '✅ Camera ready — press 📸 to capture';
+        } catch (err) {
+            statusEl.textContent = '❌ Camera error: ' + err.message;
+            console.error('Camera error:', err);
+        }
+    }
+
+    function switchCamera() {
+        camFacingMode = camFacingMode === 'environment' ? 'user' : 'environment';
+        startCamera();
+    }
+
+    function snapPhoto() {
+        const video  = document.getElementById('camVideo');
+        const canvas = document.getElementById('camCanvas');
+        const status = document.getElementById('camStatus');
+
+        if (!camStream || !video.videoWidth) {
+            status.textContent = '⚠️ Camera not ready yet.';
+            return;
+        }
+
+        // Draw frame to canvas
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        status.textContent = '⏳ Processing & uploading…';
+
+        // Compress: resize to 800px, quality 0.82
+        const maxW = 800;
+        let w = canvas.width, h = canvas.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const out = document.createElement('canvas');
+        out.width = w; out.height = h;
+        out.getContext('2d').drawImage(canvas, 0, 0, w, h);
+
+        out.toBlob(async (blob) => {
+            const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const file = new File([blob], `cam_${SR_NO}_${ts}.jpg`, { type: 'image/jpeg' });
+
+            const fd = new FormData();
+            fd.append('photo', file, file.name);
+
+            try {
+                const res  = await fetch(`/upload_photo/${SR_NO}`, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    status.textContent = '✅ Photo saved!';
+                    appendPhotoCard(data.photo_id, data.url, data.path);
+                    updateCount(1);
+                    addQueueItem(file.name);
+                    updateQueueItem(file.name, 'done', '✅ Done');
+                    // Auto close after 800ms so user sees confirmation
+                    setTimeout(() => closeCameraModal(), 800);
+                } else {
+                    status.textContent = '❌ ' + data.message;
+                }
+            } catch (err) {
+                status.textContent = '❌ Upload failed. Try again.';
+            }
+        }, 'image/jpeg', 0.82);
+    }
+
+    function closeCameraModal() {
+        if (camStream) {
+            camStream.getTracks().forEach(t => t.stop());
+            camStream = null;
+        }
+        document.getElementById('camVideo').srcObject = null;
+        document.getElementById('camStatus').textContent = 'Camera starting…';
+        document.getElementById('cameraModal').classList.remove('active');
+    }
+
+    /* ══════════════════════════════════════════════
+       SAVE & NEXT
+    ══════════════════════════════════════════════ */
+    function saveAndNext() {
+        if (isUploading) { alert('⏳ Please wait — uploads are in progress.'); return; }
+        window.location.href = '/document_checklist/{{ data.sr_no }}';
+    }
+</script>
+</body>
+</html>

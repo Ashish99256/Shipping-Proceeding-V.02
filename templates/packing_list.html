@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 2: Packing List Upload</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; }
+        .top-action-bar { background: #fff; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1001; }
+        .side-stepper { width: 60px; height: 100vh; background: #2c3e50; position: fixed; left: 0; top: 0; transition: 0.3s; z-index: 1000; padding-top: 60px; overflow: hidden; }
+        .side-stepper:hover { width: 220px; }
+        .step-item { color: white; padding: 15px 20px; display: flex; align-items: center; text-decoration: none; white-space: nowrap; }
+        .step-num { min-width: 25px; height: 25px; background: #7f8c8d; border-radius: 50%; text-align: center; margin-right: 15px; font-size: 12px; line-height: 25px; }
+        .step-item.active .step-num { background: #00FFFF; color: #000; }
+        .step-item.completed .step-num { background: #2ecc71; }
+        .main-content { margin-left: 80px; padding: 20px; }
+        .upload-card { background: white; padding: 8px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="top-action-bar">
+    <div>
+        <span class="fw-bold">Application No: </span>
+        <a href="/" style="text-decoration: none; cursor: pointer;" class="text-primary fw-bold" title="Go to Dashboard">
+            {{ data.sr_no }}
+        </a>
+    </div>
+        <div>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/checklist/{{ data.sr_no }}'">Back</button>
+            <button class="btn btn-primary btn-sm ms-2" onclick="window.location.href='/pallet_packing/{{ data.sr_no }}'">Save & Next ➔</button>
+        </div>
+    </div>
+
+    <div class="side-stepper">
+        <a href="/checklist/{{ data.sr_no }}" class="step-item completed"><div class="step-num">1</div> <span>7 Point Checklist</span></a>
+        <div class="step-item active"><div class="step-num">2</div> <span>Packing List</span></div>
+        <div class="step-item"><div class="step-num">3</div> <span>Pallet Verification</span></div>
+        <div class="step-item"><div class="step-num">4</div> <span>Photos</span></div>
+        <div class="step-item"><div class="step-num">5</div> <span>Document Checklist</span></div>
+    </div>
+
+    <div class="main-content">
+        <div class="upload-card mb-4">
+            <h5>Upload Packing List Excel</h5>
+            <p class="text-muted">Select the .xlsx file to import items for this shipment.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <input type="file" id="excelFile" class="form-control" style="max-width: 400px;" accept=".xlsx">
+                <button class="btn btn-success" onclick="uploadExcel()">Upload Data</button>
+            </div>
+        </div>
+
+        <div class="card p-3 shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Items in Packing List</h5>
+        <button
+            id="deletePackingListBtn"
+            onclick="deletePackingList()"
+            class="btn btn-danger btn-sm"
+            {% if verified_ids %}disabled title="Cannot delete: some elements are already verified in Pallet Verification"{% endif %}>
+            🗑️ Delete Packing List
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Element ID</th>
+                    <th>Product Name</th>
+                    <th>Qty M2</th>
+                    <th>Qty Sheets</th>
+                    <th>Net Weight (kg)</th>
+                    <th>Gross Weight (kg)</th>
+                    <th>Customer PO</th>
+                    <th>Invoice No</th>
+                </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+                {% for item in items %}
+                <tr id="row-{{ item.element_id }}"
+                    {% if item.element_id in verified_ids %}
+                    class="verified-row"
+                    style="background-color:#d4edda; font-weight:600;"
+                    {% endif %}>
+                    <td class="fw-bold">
+                        {{ item.element_id }}
+                        {% if item.element_id in verified_ids %}
+                        <span class="verified-badge" style="background:#28a745;color:#fff;font-size:9px;padding:1px 6px;border-radius:3px;margin-left:5px;">✓ Verified</span>
+                        {% else %}
+                        <span class="verified-badge" style="display:none;background:#28a745;color:#fff;font-size:9px;padding:1px 6px;border-radius:3px;margin-left:5px;">✓ Verified</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.qty_m2 }}</td>
+                    <td>{{ item.qty_sheets }}</td>
+                    <td>{{ item.net_weight }}</td>
+                    <td>{{ item.gross_weight }}</td>
+                    <td>{{ item.customer_po }}</td>
+                    <td>{{ item.invoice_no }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if items %}
+            <tfoot>
+                <tr style="background:#003366; color:#fff; font-weight:700; font-size:13px;">
+                    <td colspan="2" style="text-align:right; padding:6px 10px;">TOTAL</td>
+                    <td style="text-align:center;">{{ total_qty_m2 }}</td>
+                    <td style="text-align:center;">{{ total_qty_sheets }}</td>
+                    <td style="text-align:center;">{{ total_net_weight }}</td>
+                    <td style="text-align:center;">{{ total_gross_weight }}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+    <script>
+        // ── Upload Excel with retry (max 3 attempts) ──────────────────
+        async function uploadExcel() {
+            const fileInput = document.getElementById('excelFile');
+            if (fileInput.files.length === 0) return alert("Please select a file first!");
+
+            const file    = fileInput.files[0];
+            const btn     = document.querySelector('button[onclick="uploadExcel()"]');
+            const MAX_RETRY = 3;
+
+            // Show loading state
+            btn.disabled    = true;
+            btn.innerHTML   = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading…';
+
+            for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    // AbortController for 30s timeout
+                    const controller = new AbortController();
+                    const timer      = setTimeout(() => controller.abort(), 30000);
+
+                    const res = await fetch('/upload_packing_excel/{{ data.sr_no }}', {
+                        method: 'POST',
+                        body:   formData,
+                        signal: controller.signal
+                    });
+                    clearTimeout(timer);
+
+                    const data = await res.json();
+
+                    if (data.status === 'success') {
+                        btn.innerHTML = '✅ Uploaded!';
+                        alert(data.message);
+                        location.reload();
+                        return;
+                    } else {
+                        // Server returned an error — no point retrying
+                        btn.disabled  = false;
+                        btn.innerHTML = 'Upload Data';
+                        alert("❌ " + data.message);
+                        return;
+                    }
+
+                } catch (err) {
+                    const isTimeout = err.name === 'AbortError';
+                    if (attempt < MAX_RETRY) {
+                        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Retry ${attempt}/${MAX_RETRY - 1}…`;
+                        await new Promise(r => setTimeout(r, 1500 * attempt)); // wait before retry
+                    } else {
+                        btn.disabled  = false;
+                        btn.innerHTML = 'Upload Data';
+                        alert(isTimeout
+                            ? "❌ Upload timed out. Please check your connection and try again."
+                            : "❌ Upload failed after 3 attempts. Please try again.");
+                    }
+                }
+            }
+        }
+
+        // ── Delete entire Packing List ────────────────────────────────
+        function deletePackingList() {
+            const btn = document.getElementById('deletePackingListBtn');
+            if (btn.disabled) return;
+
+            const confirmed = confirm(
+                "⚠️ Are you sure you want to delete the entire Packing List?\n\nThis action cannot be undone."
+            );
+            if (!confirmed) return;
+
+            fetch('/delete_packing_list/{{ data.sr_no }}', { method: 'DELETE' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        alert('✅ ' + res.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + res.message);
+                    }
+                })
+                .catch(() => alert('Server error. Please try again.'));
+        }
+
+        // ── Check verified status on load & disable button if needed ──
+        window.addEventListener('load', function() {
+            fetch('/api/verified_ids/{{ data.sr_no }}')
+                .then(r => r.json())
+                .then(res => {
+                    const btn = document.getElementById('deletePackingListBtn');
+                    if (res.verified_ids && res.verified_ids.length > 0) {
+                        btn.disabled = true;
+                        btn.title = `Cannot delete: ${res.verified_ids.length} element(s) already verified in Pallet Verification`;
+                    } else {
+                        btn.disabled = false;
+                        btn.title = '';
+                    }
+                })
+                .catch(() => {});
+        });
+
+        // ── Apply green highlights ────────────────────────────────────
+        function applyVerifiedHighlights() {
+            fetch('/api/verified_ids/{{ data.sr_no }}')
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.verified_ids) return;
+                    res.verified_ids.forEach(function(eid) {
+                        // Match row by element_id — id attribute set on each <tr>
+                        const row = document.getElementById('row-' + eid);
+                        if (row) {
+                            row.style.backgroundColor = '#d4edda';
+                            row.style.fontWeight = '600';
+                            const badge = row.querySelector('.verified-badge');
+                            if (badge) badge.style.display = 'inline';
+                        }
+                    });
+                })
+                .catch(() => {});  // silent fail — server-side Jinja highlight still works
+        }
+
+        // Run on page load
+        window.addEventListener('load', applyVerifiedHighlights);
+    </script>
+</body>
+</html>

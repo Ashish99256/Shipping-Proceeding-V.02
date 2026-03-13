@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-section { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #dee2e6; }
+        .table-custom tr { background-color: #D1E9F6; }
+    </style>
+</head>
+<body class="container mt-4">
+    <div class="d-flex justify-content-between">
+        <h2>New Vehicle Entry</h2>
+        <button class="btn btn-secondary" onclick="location.href='/'">Back to Dashboard</button>
+    </div>
+    
+    <form action="/add_entry" method="POST" class="form-section row g-3 mt-3">
+        <div class="col-md-3"><label>1. Entry Date</label><input type="date" name="date" class="form-control" required></div>
+        <div class="col-md-3"><label>2. Customer Name</label><input type="text" name="supplier" class="form-control" required></div>
+        <div class="col-md-3"><label>3. Container No</label><input type="text" name="container_no" class="form-control"></div>
+        <div class="col-md-3"><label>4. Driver Name</label><input type="text" name="driver_name" class="form-control"></div>
+        <div class="col-md-3"><label>5. Driver Phone No</label><input type="text" name="driver_phone" class="form-control"></div>
+        <div class="col-md-3"><label>6. License No</label><input type="text" name="license_no" class="form-control"></div>
+        <div class="col-md-3"><label>7. Destination</label><input type="text" name="destination" class="form-control"></div>
+        <div class="col-md-3"><label>8. Vehicle No.</label><input type="text" name="trailer_no" class="form-control"></div>
+        <div class="col-md-3"><label>9. Transporter Name</label><input type="text" name="transporter_name" class="form-control"></div>
+        <div class="col-md-3"><label>10. Entry Time</label><input type="time" name="arrival_time" class="form-control"></div>
+        <div class="col-md-3"><label>11. Status</label><select name="status" class="form-select"><option>Open</option><option>Close</option></select></div>
+        <div class="col-md-3"><label>13. Out Date & Time</label><input type="datetime-local" name="out_date_time" class="form-control"></div>
+        <div class="col-12 text-center"><button type="submit" class="btn btn-primary px-5">Save & Add to Dashboard</button></div>
+    </form>
+
+    <h4>Recent Entries</h4>
+    <table class="table table-custom mt-3">
+        <thead class="table-dark">
+            <tr><th>Sr. No</th><th>Customer</th><th>Vehicle No</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr><td>{{ entry.sr_no }}</td><td>{{ entry.customer_name }}</td><td>{{ entry.vehicle_no }}</td><td>{{ entry.status }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function generatePETSerial() {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(2, 10).replace(/-/g, ''); // yymmdd
+    const timeStr = now.getHours().toString().padStart(2, '0') + 
+                    now.getMinutes().toString().padStart(2, '0') + 
+                    now.getSeconds().toString().padStart(2, '0');
+    return "PET" + dateStr + timeStr; // Example: PET260309103045
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // English Remark: Fetching values directly by ID to ensure data integrity
+    const data = {
+        sr_no: "PET" + new Date().toISOString().slice(2,10).replace(/-/g, '') + Math.floor(1000 + Math.random() * 9000),
+        entry_date: document.querySelector('input[name="date"]').value,
+        customer_name: document.querySelector('input[name="supplier"]').value,
+        container_no: document.querySelector('input[name="container_no"]').value,
+        driver_name: document.querySelector('input[name="driver_name"]').value,
+        driver_phone: document.querySelector('input[name="driver_phone"]').value,
+        license_no: document.querySelector('input[name="license_no"]').value,
+        destination: document.querySelector('input[name="destination"]').value,
+        vehicle_no: document.querySelector('input[name="trailer_no"]').value,
+        transporter: document.querySelector('input[name="transporter_name"]').value,
+        arrival_time: document.querySelector('input[name="arrival_time"]').value,
+        out_date_time: "" 
+    };
+
+    fetch('http://127.0.0.1:5000/api/add_entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    })
+    .then(async response => {
+        if (response.ok) {
+            alert('Entry Saved Successfully!');
+            // Professional Remark: Forcing redirect to dashboard to view new records
+            window.location.href = 'http://127.0.0.1:5000/';
+        } else {
+            const result = await response.json();
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Connection failed. Make sure Flask is running.');
+    });
+});
+</script>
+</body>
+</html>
