@@ -47,7 +47,7 @@
                 </thead>
                 <tbody>
                     {% for entry in entries %}
-                    <tr onclick="window.location.href={{ url_for('checklist', sr_no=entry.sr_no) }}">
+                    <tr onclick="window.location.href='/checklist/{{ entry.sr_no }}'">
                         <td>{{ entry.sr_no }}</td>
                         <td>{{ entry.customer_name }}</td>
                         <td>{{ entry.vehicle_no }}</td>
@@ -83,3 +83,4 @@
 </body>
 
 </html>
+
